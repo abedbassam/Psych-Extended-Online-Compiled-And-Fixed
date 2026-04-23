@@ -38,20 +38,12 @@ jobs:
           haxelib install hxvlc --quiet
           haxelib install tjson --quiet
           
-          # METHOD: Download ZIPs directly to avoid Git authentication/protocol errors
-          # linc_luajit
-          curl -L https://github.com/jigsaw-4277821/linc_luajit/archive/refs/heads/main.zip -o luajit.zip
-          haxelib install luajit.zip --quiet
+          # Use standard haxelib git but with a configuration that handles the auth bug
+          git config --global url."https://github.com/".insteadOf git@github.com:
           
-          # hxCodec
-          curl -L https://github.com/polybiusproxy/hxCodec/archive/refs/heads/master.zip -o hxCodec.zip
-          haxelib install hxCodec.zip --quiet
-          
-          # extension-androidtools
-          curl -L https://github.com/jigsaw-4277821/extension-androidtools/archive/refs/heads/main.zip -o androidtools.zip
-          haxelib install androidtools.zip --quiet
-          
-          # discord_rpc
+          haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit --quiet
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec --quiet
+          haxelib git extension-androidtools https://github.com/jigsaw-4277821/extension-androidtools --quiet
           haxelib install discord_rpc --quiet
           
           haxelib run lime setup android
@@ -61,6 +53,7 @@ jobs:
         shell: bash
 
       - name: Compile APK
+        # -final is essential for the best FPS on your RedMagic
         run: haxelib run lime build android -final
         shell: bash
 
