@@ -38,14 +38,21 @@ jobs:
           haxelib install hxvlc --quiet
           haxelib install tjson --quiet
           
-          # Force Git to use a non-interactive helper
-          git config --global core.askpass /bin/echo
+          # METHOD: Download ZIPs directly to avoid Git authentication/protocol errors
+          # linc_luajit
+          curl -L https://github.com/jigsaw-4277821/linc_luajit/archive/refs/heads/main.zip -o luajit.zip
+          haxelib install luajit.zip --quiet
           
-          # Using git:// protocol which is read-only and never asks for a password
-          haxelib git linc_luajit git://github.com/jigsaw-4277821/linc_luajit --quiet
-          haxelib git hxCodec git://github.com/polybiusproxy/hxCodec --quiet
-          haxelib git extension-androidtools git://github.com/jigsaw-4277821/extension-androidtools --quiet
-          haxelib git discord_rpc git://github.com/Aidan63/linc_discord-rpc --quiet
+          # hxCodec
+          curl -L https://github.com/polybiusproxy/hxCodec/archive/refs/heads/master.zip -o hxCodec.zip
+          haxelib install hxCodec.zip --quiet
+          
+          # extension-androidtools
+          curl -L https://github.com/jigsaw-4277821/extension-androidtools/archive/refs/heads/main.zip -o androidtools.zip
+          haxelib install androidtools.zip --quiet
+          
+          # discord_rpc
+          haxelib install discord_rpc --quiet
           
           haxelib run lime setup android
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
@@ -54,7 +61,6 @@ jobs:
         shell: bash
 
       - name: Compile APK
-        # -final provides the best performance for your RedMagic's Snapdragon chip
         run: haxelib run lime build android -final
         shell: bash
 
