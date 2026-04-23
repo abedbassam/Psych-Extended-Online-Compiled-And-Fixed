@@ -1,70 +1,59 @@
-name: Build Psych Online + Release
-run-name: Psych Online 0.13.2 Mobile Port
-on: workflow_dispatch
-
-permissions:
-  contents: write
-  discussions: write
-
-env:
-  PROJECT_NAME: PsychOnline
+name: Build + Release (Fixed)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
 
 jobs:
-  build:
-    name: ${{ matrix.name }}
-    strategy:
-      matrix:
-        include:
-          - name: Android
-            os: macos-15
-            buildArgs: "android -final -D officialBuild"
-            artifactName: androidBuild
-            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-          - name: iOS
-            os: macos-15
-            buildArgs: "ios -final -nosign -D officialBuild"
-            artifactName: iOSBuild
-            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-    uses: ./.github/workflows/build.yml
-    with:
-        name: ${{ matrix.name }}
-        os: ${{ matrix.os }}
-        buildArgs: ${{ matrix.buildArgs }}
-        assetType: ${{ matrix.assetType }}
-        artifactName: ${{ matrix.artifactName }}
-        artifactPath: ${{ matrix.artifactPath }}
-
-  Releaser:
-    needs: [build]
+  build-android:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
     steps:
-      - name: Download Android Build
-        uses: actions/download-artifact@main
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          name: androidBuild
-          path: /home/runner
+          submodules: true # IMPORTANT: Psych Online uses submodules for its C++ libs
 
-      - name: Move Android File
-        run: mv /home/runner/${{ env.PROJECT_NAME }}-release.apk /home/runner/${{ env.PROJECT_NAME }}-Android.apk
-
-      - name: Download iOS Build
-        uses: actions/download-artifact@main
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          name: iOSBuild
-          path: ${{ github.workspace }}
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Move iOS File
-        run: mv ${{ github.workspace }}/${{ env.PROJECT_NAME }}.ipa /home/runner/${{ env.PROJECT_NAME }}-iOS.ipa
-
-      - name: Publish The Release
-        uses: softprops/action-gh-release@v2
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
         with:
-          name: "PsychOnline 0.13.2 Mobile Bugfix"
-          tag_name: "0.13.2-bugfix-mobile"
-          prerelease: false
-          files: |
-            /home/runner/*.apk
-            /home/runner/*.ipa
-            /home/runner/*.tar
-            /home/runner/*.zip
+          haxe-version: 4.2.5
+
+      - name: Install All Dependencies (Forced)
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.0.1
+          haxelib install openfl 9.2.1
+          haxelib install flixel 5.2.2
+          haxelib install flixel-addons 3.0.2
+          haxelib install flixel-ui
+          haxelib install flixel-tools
+          haxelib install hxvlc
+          haxelib install tjson
+          haxelib git linc_luajit https://github.com/jigsaw-4277821/linc_luajit
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
+          haxelib git extension-androidtools https://github.com/jigsaw-4277821/extension-androidtools
+          haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
+          haxelib run lime setup android
+          haxelib run lime setup
+        
+      - name: Compile Android
+        # We use -debug first to see if it catches the error faster, 
+        # but change to -final once you know it works.
+        run: haxelib run lime build android -final
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "latest-build"
+          name: "Psych Online Extended - Android"
+          files: export/release/android/bin/app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
