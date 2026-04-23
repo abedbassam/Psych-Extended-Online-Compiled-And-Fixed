@@ -38,26 +38,15 @@ jobs:
           haxelib install hxvlc --quiet
           haxelib install tjson --quiet
           
-          # FIX: Prevent Git from asking for username/password
-          git config --global url."https://github.com/".insteadOf git@github.com:
+          # Force Git to use a non-interactive helper
           git config --global core.askpass /bin/echo
-
-          # Direct Cloning with forced directory creation
-          mkdir -p ~/haxelib/linc_luajit
-          git clone --depth=1 https://github.com/jigsaw-4277821/linc_luajit ~/haxelib/linc_luajit/git
-          haxelib dev linc_luajit ~/haxelib/linc_luajit/git
           
-          mkdir -p ~/haxelib/hxCodec
-          git clone --depth=1 https://github.com/polybiusproxy/hxCodec ~/haxelib/hxCodec/git
-          haxelib dev hxCodec ~/haxelib/hxCodec/git
+          # Using git:// protocol which is read-only and never asks for a password
+          haxelib git linc_luajit git://github.com/jigsaw-4277821/linc_luajit --quiet
+          haxelib git hxCodec git://github.com/polybiusproxy/hxCodec --quiet
+          haxelib git extension-androidtools git://github.com/jigsaw-4277821/extension-androidtools --quiet
+          haxelib git discord_rpc git://github.com/Aidan63/linc_discord-rpc --quiet
           
-          mkdir -p ~/haxelib/extension-androidtools
-          git clone --depth=1 https://github.com/jigsaw-4277821/extension-androidtools ~/haxelib/extension-androidtools/git
-          haxelib dev extension-androidtools ~/haxelib/extension-androidtools/git
-          
-          haxelib install discord_rpc --quiet
-          
-          # Android Setup
           haxelib run lime setup android
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK $ANDROID_NDK_LATEST_HOME
@@ -65,6 +54,7 @@ jobs:
         shell: bash
 
       - name: Compile APK
+        # -final provides the best performance for your RedMagic's Snapdragon chip
         run: haxelib run lime build android -final
         shell: bash
 
@@ -73,7 +63,7 @@ jobs:
         if: success()
         with:
           tag_name: "android-astra-${{ github.run_number }}"
-          name: "Psych Online Android - Build #${{ github.run_number }}"
+          name: "Psych Online Android Build #${{ github.run_number }}"
           files: export/release/android/bin/app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
