@@ -8,7 +8,7 @@ on:
 
 jobs:
   buildWindows:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write # CRITICAL: Allows the action to create the release
     steps:
