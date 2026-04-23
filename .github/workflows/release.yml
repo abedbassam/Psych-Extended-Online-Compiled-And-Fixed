@@ -37,18 +37,27 @@ jobs:
           haxelib install flixel-tools --quiet
           haxelib install hxvlc --quiet
           haxelib install tjson --quiet
-          # Manually cloning to avoid the "Could not clone" error
-          git clone https://github.com/jigsaw-4277821/linc_luajit ~/haxelib/linc_luajit/git
+          
+          # FIX: Prevent Git from asking for username/password
+          git config --global url."https://github.com/".insteadOf git@github.com:
+          git config --global core.askpass /bin/echo
+
+          # Direct Cloning with forced directory creation
+          mkdir -p ~/haxelib/linc_luajit
+          git clone --depth=1 https://github.com/jigsaw-4277821/linc_luajit ~/haxelib/linc_luajit/git
           haxelib dev linc_luajit ~/haxelib/linc_luajit/git
           
-          git clone https://github.com/polybiusproxy/hxCodec ~/haxelib/hxCodec/git
+          mkdir -p ~/haxelib/hxCodec
+          git clone --depth=1 https://github.com/polybiusproxy/hxCodec ~/haxelib/hxCodec/git
           haxelib dev hxCodec ~/haxelib/hxCodec/git
           
-          git clone https://github.com/jigsaw-4277821/extension-androidtools ~/haxelib/extension-androidtools/git
+          mkdir -p ~/haxelib/extension-androidtools
+          git clone --depth=1 https://github.com/jigsaw-4277821/extension-androidtools ~/haxelib/extension-androidtools/git
           haxelib dev extension-androidtools ~/haxelib/extension-androidtools/git
           
           haxelib install discord_rpc --quiet
           
+          # Android Setup
           haxelib run lime setup android
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK $ANDROID_NDK_LATEST_HOME
@@ -61,7 +70,7 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        if: always()
+        if: success()
         with:
           tag_name: "android-astra-${{ github.run_number }}"
           name: "Psych Online Android - Build #${{ github.run_number }}"
